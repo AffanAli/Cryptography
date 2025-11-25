@@ -1,0 +1,39 @@
+Prerelease License -- for engineering feedback and testing
+	purposes only. Not for sale.
+
+>> key = keygen
+
+key =
+
+     1     1     0     1     0     0     1     1
+     1     1     1     1     0     0     1     0
+     0     0     1     1     0     1     0     0
+     1     1     1     0     1     1     1     1
+     1     1     1     1     1     0     1     1
+     0     0     0     0     0     0     0     1
+     0     1     1     1     1     0     0     1
+     1     0     1     0     0     1     0     0
+
+>> class(key)
+
+ans =
+
+    'double'
+
+>> DES('This is a message', key, 'ENC')
+Parity Check Passed!
+Mode is ENCRYPT! Set 3rd argument to DEC to Decrypt!
+
+ans =
+
+    '027B84BFFB2781459539289FEF02D0448E05538EBCCA9AEE'
+
+>> DES('027B84BFFB2781459539289FEF02D0448E05538EBCCA9AEE', key, 'DEC')
+Parity Check Passed!
+Mode is DECRYPT!
+
+ans =
+
+    'This is a message·ÂÂÁ-'
+
+>> 

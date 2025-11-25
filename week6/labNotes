@@ -1,0 +1,51 @@
+What is KSA? (Key Scheduling Algorithm)
+
+KSA stands for Key Scheduling Algorithm.
+It is the first phase of the RC4-style stream cipher.
+
+Purpose of KSA
+
+KSA takes the key (e.g., "KAREEM") and uses it to scramble an array S containing values from 0 to 255.
+
+Initially:
+
+S = [0, 1, 2, 3, 4, ..., 255]
+
+
+After KSA mixes the key into S, the array becomes shuffled in a key-specific way.
+
+This shuffled S is your internal cipher state.
+If someone doesn’t know the correct key, they cannot recreate the same S-state, meaning they cannot decrypt the message.
+
+Output of KSA
+
+The function returns S, the scrambled array.
+
+This S will be used by PRGA to generate the keystream.
+
+What is PRGA? (Pseudo-Random Generation Algorithm)
+
+PRGA stands for Pseudo Random Generation Algorithm.
+It is the second phase of the cipher.
+
+Purpose of PRGA
+
+PRGA uses the scrambled array S from KSA to generate a stream of random-looking bytes called the keystream.
+
+Example keystream output:
+
+Z = [91, 203, 14, 44, 159, ...]
+
+How is it used?
+
+To encrypt:
+
+ciphertext = plaintext XOR keystream
+
+
+To decrypt:
+
+plaintext = ciphertext XOR keystream
+
+
+Since XOR is reversible, same process works for encryption and decryption.
