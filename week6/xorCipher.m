@@ -16,7 +16,6 @@ function result = xorCipher(text, key, nonce, mode)
     combined_key = [key_bytes nonce];
     scramble_key = KSA(combined_key);
 
-    
     if strcmpi(mode, 'encrypt')
         result = encrypt(text, scramble_key);
     elseif strcmpi(mode, 'decrypt')
@@ -35,12 +34,16 @@ function ciphertext_hex = encrypt(plaintext_str, scramble_key)
     else
          plaintext_bytes = uint8(plaintext_str);
     end
+    
+    % Ensure row vector for consistent PRGA generation
+    plaintext_bytes = plaintext_bytes(:)';
+    
+    keystream = uint8(PRGA(scramble_key, length(plaintext_bytes)));
     ciphertext_hex = bitxor(keystream, plaintext_bytes);
 end
 
 function recovered_hex = decrypt(ciphertext_hex, scramble_key)
-    keystream = uint8(PRGA(scramble_key, length(ciphertext_hex)));
-
+    % Handle binary input properly
     % Ensure numeric
     if ischar(ciphertext_hex) || isstring(ciphertext_hex)
          ciphertext_bytes = uint8(char(ciphertext_hex));
@@ -48,5 +51,9 @@ function recovered_hex = decrypt(ciphertext_hex, scramble_key)
          ciphertext_bytes = uint8(ciphertext_hex);
     end
 
+    % Ensure row vector
+    ciphertext_bytes = ciphertext_bytes(:)';
+
+    keystream = uint8(PRGA(scramble_key, length(ciphertext_bytes)));
     recovered_hex = bitxor(ciphertext_bytes, keystream);
 end

@@ -171,29 +171,57 @@ function CryptoApp
     genNonceBtn.ButtonPushedFcn = @(btn,event) generateNonce(nonceEdit, fig);
     encryptBtn.ButtonPushedFcn = @(btn,event) processText(inputTextArea, outputTextArea, methodDropdown, shiftEdit, keyEdit, nonceEdit, algoDropdown, 'encrypt', fig);
     decryptBtn.ButtonPushedFcn = @(btn,event) processText(inputTextArea, outputTextArea, methodDropdown, shiftEdit, keyEdit, nonceEdit, algoDropdown, 'decrypt', fig);
-    inputTextArea.ValueChangedFcn = @(area, event) textChanged(fileNameLabel);
+    inputTextArea.ValueChangedFcn = @(area, event) textChanged(fileNameLabel, fig);
 
     % Initialize visibility
     updateVisibility(methodDropdown, shiftLabel, shiftEdit, keyLabel, keyEdit, keyBtnGrid, genKeyBtn, genDHBtn, nonceLabel, nonceEdit, genNonceBtn, algoLabel, algoDropdown, encryptBtn, decryptBtn, gl);
 end
 
 function uploadFile(lbl, area, fig)
-    [file, path] = uigetfile({'*.txt', 'Text Files (*.txt)'}, 'Select Text File');
+    [file, path] = uigetfile({'*.*', 'All Files (*.*)'}, 'Select File');
     if isequal(file, 0)
         return;
     end
     fullPath = fullfile(path, file);
     lbl.Text = file;
     try
-        content = fileread(fullPath);
-        area.Value = content;
+        % Read as binary bytes
+        fid = fopen(fullPath, 'rb');
+        raw_bytes = fread(fid, inf, '*uint8')';
+        fclose(fid);
+        
+        % Store raw bytes in appdata for processing
+        setappdata(fig, 'BinaryInputData', raw_bytes);
+        
+        % Determine if it's text or binary for display
+        % Heuristic: if contains nulls or many control chars, treat as binary
+        is_binary = any(raw_bytes == 0) || (sum(raw_bytes < 9 | (raw_bytes > 13 & raw_bytes < 32)) / length(raw_bytes) > 0.1);
+        
+        if is_binary
+            % Display as Hex String
+            % Limit display size to prevent UI freeze on large files?
+            % For now, show all (or truncation could be considered)
+            hex_str = upper(reshape(dec2hex(raw_bytes)', 1, []));
+            area.Value = hex_str; 
+        else
+            % It's text, convert to char
+            text_content = char(raw_bytes);
+            area.Value = text_content;
+        end
     catch ME
+        if exist('fid', 'var') && fid > 0
+            fclose(fid);
+        end
         uialert(fig, ['Error reading file: ' ME.message], 'File Error');
     end
 end
 
-function textChanged(lbl)
+function textChanged(lbl, fig)
     lbl.Text = 'No file selected';
+    % Clear binary data if user edits text manually
+    if isappdata(fig, 'BinaryInputData')
+        rmappdata(fig, 'BinaryInputData');
+    end
 end
 
 function updateVisibility(dd, sLbl, sEdit, kLbl, kEdit, kGrid, genBtn, dhBtn, nLbl, nEdit, nGenBtn, aLbl, aDD, encBtn, decBtn, gl)
@@ -386,13 +414,20 @@ function generateNonce(nEdit, fig)
 end
 
 function processText(inArea, outArea, methodDD, sEdit, kEdit, nEdit, aDD, mode, fig)
-    text = inArea.Value;
-    if isempty(text)
-        uialert(fig, 'Please enter text or upload a file.', 'Input Error');
-        return; 
-    end
-    if iscell(text)
-        text = strjoin(text, newline);
+    % Determine input data
+    hasBinaryData = isappdata(fig, 'BinaryInputData');
+    if hasBinaryData
+        text = getappdata(fig, 'BinaryInputData');
+        % text is now uint8 vector
+    else
+        text = inArea.Value;
+        if isempty(text)
+            uialert(fig, 'Please enter text or upload a file.', 'Input Error');
+            return; 
+        end
+        if iscell(text)
+            text = strjoin(text, newline);
+        end
     end
 
     method = methodDD.Value;
@@ -400,6 +435,7 @@ function processText(inArea, outArea, methodDD, sEdit, kEdit, nEdit, aDD, mode, 
     try
         result = '';
         if strcmp(method, 'Caesar')
+            if isnumeric(text), text = char(text); end
             shiftStr = sEdit.Value;
             shift = str2double(shiftStr);
             if isnan(shift)
@@ -407,6 +443,7 @@ function processText(inArea, outArea, methodDD, sEdit, kEdit, nEdit, aDD, mode, 
             end
             result = caeser(text, shift, mode);
         elseif strcmp(method, 'One-Time Pad')
+            if isnumeric(text), text = char(text); end
             key = kEdit.Value;
             if isempty(key)
                  error('Please enter a key for One-Time Pad.');
@@ -423,14 +460,15 @@ function processText(inArea, outArea, methodDD, sEdit, kEdit, nEdit, aDD, mode, 
             end
 
             % Pre-processing for XOR Decrypt (Hex String -> Bytes)
-            if strcmpi(mode, 'decrypt')
+            % Only if manual text input (no binary file loaded)
+            if strcmpi(mode, 'decrypt') && ~hasBinaryData
                  try
                      % Remove spaces if any
                      clean_text = strrep(text, ' ', '');
                      % Convert Hex string to uint8 array
                      text = uint8(hex2dec(reshape(clean_text, 2, [])')');
                  catch
-                     error('Input for decryption must be a valid Hex string.');
+                     error('Input for decryption must be a valid Hex string (or upload a binary file).');
                  end
             end
 
@@ -438,15 +476,19 @@ function processText(inArea, outArea, methodDD, sEdit, kEdit, nEdit, aDD, mode, 
             out_uint8 = xorCipher(text, key, nonceStr, mode);
 
             % Handle display
-            if strcmpi(mode, 'encrypt')
-                % Convert uint8 array to Hex String for display
-                result = lower(reshape(dec2hex(out_uint8)', 1, []));
-            else
-                % Decrypt: xorCipher result is plaintext bytes
-                % Convert back to char
+            % Heuristic: If all bytes are printable ASCII/newlines, show text. Else Hex.
+            % Printable ASCII: 32-126, plus TAB(9), LF(10), CR(13)
+            is_printable = all((out_uint8 >= 32 & out_uint8 <= 126) | out_uint8 == 9 | out_uint8 == 10 | out_uint8 == 13);
+            
+            if is_printable
                 result = char(out_uint8);
+            else
+                % Show Hex
+                result = lower(reshape(dec2hex(out_uint8)', 1, []));
             end
+            
         elseif strcmp(method, 'AES block cipher')
+            if isnumeric(text), text = char(text); end
             key = kEdit.Value;
             if isempty(key)
                 error('Please enter a 64-character Hex key for AES.');
@@ -467,12 +509,14 @@ function processText(inArea, outArea, methodDD, sEdit, kEdit, nEdit, aDD, mode, 
                 result = aesBlockCipher(text, key, mode);
             end
         elseif strcmp(method, 'DES block cipher')
+            if isnumeric(text), text = char(text); end
             key = getappdata(fig, 'DESKey');
             if isempty(key)
                 error('No DES key found. Please click "Update Key Matrix" first.');
             end
             result = desBlockCipher(text, key, mode);
         elseif strcmp(method, 'Keyed Hash')
+            if isnumeric(text), text = char(text); end
             key = kEdit.Value;
             if isempty(key)
                 error('Please enter a key for HMAC.');
