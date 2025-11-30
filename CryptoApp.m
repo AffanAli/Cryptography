@@ -1,17 +1,19 @@
 function CryptoApp
     % Create UI Figure
-    fig = uifigure('Name', 'Crypto App', 'Position', [100 100 700 600]); % Increased width to 700
+    fig = uifigure('Name', 'Crypto App', 'Position', [100 100 700 600]); 
     
     % Grid Layout
-    gl = uigridlayout(fig, [7, 4]); % Increased to 7 rows
-    gl.RowHeight = {40, 40, 30, 30, 150, 40, 150}; % Added Row 4 for Nonce
-    gl.ColumnWidth = {100, '1x', '1x', 160}; % Col 4 width for buttons increased to 160
-
+    gl = uigridlayout(fig, [7, 4]); 
+    gl.RowHeight = {40, 40, 30, 30, 150, 40, 150}; 
+    gl.ColumnWidth = {100, '1x', '1x', 160}; 
+    
+    % Store user data (RSA P/Q) in app data if needed, or just prompt
+    
     % File Upload Section
     uploadBtn = uibutton(gl, 'Text', 'Upload File');
     uploadBtn.Layout.Row = 1;
     uploadBtn.Layout.Column = 1;
-    uploadBtn.BackgroundColor = [0.30, 0.50, 0.90]; % Blue
+    uploadBtn.BackgroundColor = [0.30, 0.50, 0.90]; 
     uploadBtn.FontColor = [1 1 1];
     uploadBtn.FontWeight = 'bold';
     
@@ -60,16 +62,15 @@ function CryptoApp
     keyEdit.Visible = 'off';
     keyEdit.Placeholder = 'Enter key...';
 
-    % Key Generation Buttons Container (using a grid for multiple buttons)
-    % Replaces single genKeyBtn
-    keyBtnGrid = uigridlayout(gl, [1, 2]); % Reduced columns to 2 (Gen, DH)
+    % Key Generation Buttons Container
+    keyBtnGrid = uigridlayout(gl, [1, 2]); 
     keyBtnGrid.Layout.Row = 3;
     keyBtnGrid.Layout.Column = 4;
     keyBtnGrid.Padding = [0 0 0 0];
     keyBtnGrid.ColumnSpacing = 2;
-    keyBtnGrid.Visible = 'off'; % Controlled by visibility logic
+    keyBtnGrid.Visible = 'off'; 
 
-    % Standard Gen Button (One-Time Pad, XOR, etc.)
+    % Standard Gen Button
     genKeyBtn = uibutton(keyBtnGrid, 'Text', 'Gen');
     genKeyBtn.Visible = 'off';
     genKeyBtn.BackgroundColor = [0.5, 0.5, 0.5];
@@ -79,11 +80,11 @@ function CryptoApp
     % DH Key Button (Keyed Hash)
     genDHBtn = uibutton(keyBtnGrid, 'Text', 'DH');
     genDHBtn.Visible = 'off';
-    genDHBtn.BackgroundColor = [0.6, 0.4, 0.8]; % Purple
+    genDHBtn.BackgroundColor = [0.6, 0.4, 0.8]; 
     genDHBtn.FontColor = [1 1 1];
     genDHBtn.FontWeight = 'bold';
 
-    % Algo Dropdown (Row 4 for Keyed Hash, reusing Nonce space/row)
+    % Algo Dropdown (Row 4)
     algoLabel = uilabel(gl);
     algoLabel.Text = 'Algorithm:';
     algoLabel.Layout.Row = 4;
@@ -97,7 +98,7 @@ function CryptoApp
     algoDropdown.Layout.Column = [2 3];
     algoDropdown.Visible = 'off';
 
-    % Nonce (Row 4, Initially hidden, XOR only)
+    % Nonce (Row 4)
     nonceLabel = uilabel(gl);
     nonceLabel.Text = 'Nonce:';
     nonceLabel.Layout.Row = 4;
@@ -118,6 +119,38 @@ function CryptoApp
     genNonceBtn.BackgroundColor = [0.5, 0.5, 0.5]; 
     genNonceBtn.FontColor = [1 1 1];
     genNonceBtn.FontWeight = 'bold';
+    
+    % RSA Inputs (Using Row 3/4 dynamically or reuse Key fields? 
+    % RSA needs p and q. We can use KeyEdit for p and NonceEdit for q?
+    % Or dedicated fields?
+    % Let's reuse Key Label/Edit for 'p' and add 'q' input.
+    % Actually, let's prompt for p and q via dialog to keep UI clean or add fields.
+    % The user said "Take input and P and Q from user". 
+    % Let's add specific fields for RSA that show up.
+    
+    rsaPLabel = uilabel(gl);
+    rsaPLabel.Text = 'Prime p:';
+    rsaPLabel.Layout.Row = 3;
+    rsaPLabel.Layout.Column = 1;
+    rsaPLabel.HorizontalAlignment = 'right';
+    rsaPLabel.Visible = 'off';
+    
+    rsaPEdit = uieditfield(gl, 'numeric');
+    rsaPEdit.Layout.Row = 3;
+    rsaPEdit.Layout.Column = 2; 
+    rsaPEdit.Visible = 'off';
+    
+    rsaQLabel = uilabel(gl);
+    rsaQLabel.Text = 'Prime q:';
+    rsaQLabel.Layout.Row = 3;
+    rsaQLabel.Layout.Column = 3;
+    rsaQLabel.HorizontalAlignment = 'right';
+    rsaQLabel.Visible = 'off';
+    
+    rsaQEdit = uieditfield(gl, 'numeric');
+    rsaQEdit.Layout.Row = 3;
+    rsaQEdit.Layout.Column = 4; 
+    rsaQEdit.Visible = 'off';
 
     % Input Text Area
     inputTextLabel = uilabel(gl);
@@ -137,14 +170,14 @@ function CryptoApp
     encryptBtn = uibutton(gl, 'Text', 'Encrypt');
     encryptBtn.Layout.Row = 6;
     encryptBtn.Layout.Column = 2; 
-    encryptBtn.BackgroundColor = [0.39, 0.83, 0.07]; % Green
+    encryptBtn.BackgroundColor = [0.39, 0.83, 0.07]; 
     encryptBtn.FontColor = [1 1 1];
     encryptBtn.FontWeight = 'bold';
     
     decryptBtn = uibutton(gl, 'Text', 'Decrypt');
     decryptBtn.Layout.Row = 6;
     decryptBtn.Layout.Column = 3;
-    decryptBtn.BackgroundColor = [0.85, 0.33, 0.10]; % Red/Orange
+    decryptBtn.BackgroundColor = [0.85, 0.33, 0.10]; 
     decryptBtn.FontColor = [1 1 1];
     decryptBtn.FontWeight = 'bold';
 
@@ -163,18 +196,23 @@ function CryptoApp
 
     % Callbacks
     uploadBtn.ButtonPushedFcn = @(btn,event) uploadFile(fileNameLabel, inputTextArea, fig);
-    methodDropdown.ValueChangedFcn = @(dd,event) updateVisibility(dd, shiftLabel, shiftEdit, keyLabel, keyEdit, keyBtnGrid, genKeyBtn, genDHBtn, nonceLabel, nonceEdit, genNonceBtn, algoLabel, algoDropdown, encryptBtn, decryptBtn, gl);
+    
+    % Update visibility callback to include new RSA widgets
+    methodDropdown.ValueChangedFcn = @(dd,event) updateVisibility(dd, shiftLabel, shiftEdit, keyLabel, keyEdit, keyBtnGrid, genKeyBtn, genDHBtn, nonceLabel, nonceEdit, genNonceBtn, algoLabel, algoDropdown, rsaPLabel, rsaPEdit, rsaQLabel, rsaQEdit, encryptBtn, decryptBtn, gl);
     
     genKeyBtn.ButtonPushedFcn = @(btn,event) generateKey(keyEdit, inputTextArea, methodDropdown, fig);
     genDHBtn.ButtonPushedFcn = @(btn,event) generateKeyDH(keyEdit, fig);
     
     genNonceBtn.ButtonPushedFcn = @(btn,event) generateNonce(nonceEdit, fig);
-    encryptBtn.ButtonPushedFcn = @(btn,event) processText(inputTextArea, outputTextArea, methodDropdown, shiftEdit, keyEdit, nonceEdit, algoDropdown, 'encrypt', fig);
-    decryptBtn.ButtonPushedFcn = @(btn,event) processText(inputTextArea, outputTextArea, methodDropdown, shiftEdit, keyEdit, nonceEdit, algoDropdown, 'decrypt', fig);
+    
+    % Update processText to include RSA widgets
+    encryptBtn.ButtonPushedFcn = @(btn,event) processText(inputTextArea, outputTextArea, methodDropdown, shiftEdit, keyEdit, nonceEdit, algoDropdown, rsaPEdit, rsaQEdit, 'encrypt', fig);
+    decryptBtn.ButtonPushedFcn = @(btn,event) processText(inputTextArea, outputTextArea, methodDropdown, shiftEdit, keyEdit, nonceEdit, algoDropdown, rsaPEdit, rsaQEdit, 'decrypt', fig);
+    
     inputTextArea.ValueChangedFcn = @(area, event) textChanged(fileNameLabel, fig);
 
     % Initialize visibility
-    updateVisibility(methodDropdown, shiftLabel, shiftEdit, keyLabel, keyEdit, keyBtnGrid, genKeyBtn, genDHBtn, nonceLabel, nonceEdit, genNonceBtn, algoLabel, algoDropdown, encryptBtn, decryptBtn, gl);
+    updateVisibility(methodDropdown, shiftLabel, shiftEdit, keyLabel, keyEdit, keyBtnGrid, genKeyBtn, genDHBtn, nonceLabel, nonceEdit, genNonceBtn, algoLabel, algoDropdown, rsaPLabel, rsaPEdit, rsaQLabel, rsaQEdit, encryptBtn, decryptBtn, gl);
 end
 
 function uploadFile(lbl, area, fig)
@@ -199,8 +237,6 @@ function uploadFile(lbl, area, fig)
         
         if is_binary
             % Display as Hex String
-            % Limit display size to prevent UI freeze on large files?
-            % For now, show all (or truncation could be considered)
             hex_str = upper(reshape(dec2hex(raw_bytes)', 1, []));
             area.Value = hex_str; 
         else
@@ -224,10 +260,10 @@ function textChanged(lbl, fig)
     end
 end
 
-function updateVisibility(dd, sLbl, sEdit, kLbl, kEdit, kGrid, genBtn, dhBtn, nLbl, nEdit, nGenBtn, aLbl, aDD, encBtn, decBtn, gl)
+function updateVisibility(dd, sLbl, sEdit, kLbl, kEdit, kGrid, genBtn, dhBtn, nLbl, nEdit, nGenBtn, aLbl, aDD, pLbl, pEdit, qLbl, qEdit, encBtn, decBtn, gl)
     method = dd.Value;
     
-    % Default visibility
+    % Default visibility (hide all)
     sLbl.Visible = 'off'; sEdit.Visible = 'off';
     kLbl.Visible = 'off'; kEdit.Visible = 'off'; 
     kGrid.Visible = 'off'; genBtn.Visible = 'off'; dhBtn.Visible = 'off';
@@ -235,12 +271,15 @@ function updateVisibility(dd, sLbl, sEdit, kLbl, kEdit, kGrid, genBtn, dhBtn, nL
     nLbl.Visible = 'off'; nEdit.Visible = 'off'; nGenBtn.Visible = 'off';
     aLbl.Visible = 'off'; aDD.Visible = 'off';
     
+    pLbl.Visible = 'off'; pEdit.Visible = 'off';
+    qLbl.Visible = 'off'; qEdit.Visible = 'off';
+    
     encBtn.Text = 'Encrypt';
     decBtn.Visible = 'on'; % Default show decrypt button
 
-    % Reset Row 3 height to default
+    % Reset Row 3/4 height to default
     gl.RowHeight{3} = 30; 
-    gl.RowHeight{4} = 0; % Hide Nonce/Algo row by default
+    gl.RowHeight{4} = 0; % Hide Row 4 by default
 
     kEdit.Editable = 'on'; 
 
@@ -271,9 +310,9 @@ function updateVisibility(dd, sLbl, sEdit, kLbl, kEdit, kGrid, genBtn, dhBtn, nL
         genBtn.Visible = 'on';
         genBtn.Text = 'Gen AES-256';
     elseif strcmp(method, 'DES block cipher')
-        kLbl.Visible = 'on'; % Show key label
-        kEdit.Visible = 'on'; % Show key display
-        kEdit.Editable = 'off'; % User cannot edit matrix manually
+        kLbl.Visible = 'on'; 
+        kEdit.Visible = 'on'; 
+        kEdit.Editable = 'off'; 
         kGrid.Visible = 'on';
         genBtn.Visible = 'on';
         genBtn.Text = 'Update Key Matrix';
@@ -281,8 +320,6 @@ function updateVisibility(dd, sLbl, sEdit, kLbl, kEdit, kGrid, genBtn, dhBtn, nL
     elseif strcmp(method, 'Keyed Hash')
         kLbl.Visible = 'on';
         kEdit.Visible = 'on';
-        
-        % Show 2 buttons for Keyed Hash
         kGrid.Visible = 'on';
         genBtn.Visible = 'on';
         genBtn.Text = 'Gen Key';
@@ -293,7 +330,23 @@ function updateVisibility(dd, sLbl, sEdit, kLbl, kEdit, kGrid, genBtn, dhBtn, nL
         gl.RowHeight{4} = 30; % Show Algo row
 
         encBtn.Text = 'Generate Hash';
-        decBtn.Visible = 'off'; % No decryption for Hash
+        decBtn.Visible = 'off'; 
+    elseif strcmp(method, 'RSA')
+        % Show P and Q inputs
+        pLbl.Visible = 'on';
+        pEdit.Visible = 'on';
+        qLbl.Visible = 'on';
+        qEdit.Visible = 'on';
+        % Row 3 needs to accommodate 2 fields (P and Q)
+        % We used Grid Layout column 1 for label, 2 for P, 3 for Q label, 4 for Q edit
+        % The labels and edits are already positioned in Row 3.
+        % Just ensuring kLbl/kEdit are hidden allows p/q to be seen if they overlap? 
+        % Grid layout prevents overlap if cells are distinct. 
+        % My layout:
+        % sLbl, kLbl, pLbl share Row 3, Col 1
+        % sEdit, kEdit share Row 3, Col [2 3] or [2 4]
+        % pEdit is Row 3, Col 2. qLbl is Col 3. qEdit is Col 4.
+        % So hiding sEdit/kEdit clears the space.
     end
 end
 
@@ -315,21 +368,15 @@ function generateKey(kEdit, inArea, methodDD, fig)
         kEdit.Value = key;
         
     elseif strcmp(method, 'AES block cipher')
-        % AES 256-bit key = 64 hex characters
         hexChars = '0123456789abcdef';
         key = hexChars(randi(16, 1, 64));
         kEdit.Value = key;
     elseif strcmp(method, 'DES block cipher')
-        % Generate/Update DES Key Matrix
         try
             addpath(genpath('week6'));
-            key = keygen; % Generates 8x8 key matrix
+            key = keygen; 
             setappdata(fig, 'DESKey', key);
-            
-            % Format matrix for display
-            % uieditfield cannot handle multi-line strings, so we use mat2str for the field
             kEdit.Value = mat2str(key);
-            
             keyStr = num2str(key);
             msg = "DES Key Matrix Updated:" + newline + newline + join(string(keyStr), newline);
             uialert(fig, msg, 'Key Update');
@@ -337,15 +384,12 @@ function generateKey(kEdit, inArea, methodDD, fig)
             uialert(fig, ['Error generating DES key: ' ME.message], 'Key Gen Error');
         end
     elseif strcmp(method, 'XOR - Bitwise stream cipher')
-        % Generate random string key
-        % Length not specified, using 16 chars
         chars = ['A':'Z' 'a':'z' '0':'9'];
         key = chars(randi(length(chars), 1, 16));
         kEdit.Value = key;
     elseif strcmp(method, 'Keyed Hash')
-        % Generate random string key for HMAC
         chars = ['A':'Z' 'a':'z' '0':'9'];
-        key = chars(randi(length(chars), 1, 32)); % 32 chars for robustness
+        key = chars(randi(length(chars), 1, 32)); 
         kEdit.Value = key;
     end
 end
@@ -353,17 +397,13 @@ end
 function generateKeyDH(kEdit, fig)
     try
         addpath(genpath('week8'));
-        
-        % Create input dialog for g and p
         prompt = {'Enter a prime value for g:', 'Enter a prime value for p:'};
         dlgtitle = 'Diffie-Hellman Inputs';
         dims = [1 35];
         definput = {'', ''};
         answer = inputdlg(prompt, dlgtitle, dims, definput);
         
-        if isempty(answer)
-            return; % User cancelled
-        end
+        if isempty(answer), return; end
         
         g_str = answer{1};
         p_str = answer{2};
@@ -381,23 +421,13 @@ function generateKeyDH(kEdit, fig)
             return;
         end
         
-        % Check if primes
-        if ~isprime(g)
-             uialert(fig, 'g must be a prime number.', 'Input Error');
-             return;
-        end
-        if ~isprime(p)
-             uialert(fig, 'p must be a prime number.', 'Input Error');
+        if ~isprime(g) || ~isprime(p)
+             uialert(fig, 'g and p must be prime numbers.', 'Input Error');
              return;
         end
         
-        % Call DHKey with inputs
         key = DHKey(g, p);
-        
-        % Convert to string if numeric
-        if isnumeric(key)
-            key = num2str(key);
-        end
+        if isnumeric(key), key = num2str(key); end
         kEdit.Value = key;
         uialert(fig, 'Key generated using Diffie-Hellman.', 'DH Key Gen');
         
@@ -407,27 +437,21 @@ function generateKeyDH(kEdit, fig)
 end
 
 function generateNonce(nEdit, fig)
-    % Generate random nonce: uint8(randi([0 255], 1, 8))
     nonce = uint8(randi([0 255], 1, 8));
-    % Display as space-separated values
     nEdit.Value = num2str(nonce);
 end
 
-function processText(inArea, outArea, methodDD, sEdit, kEdit, nEdit, aDD, mode, fig)
-    % Determine input data
+function processText(inArea, outArea, methodDD, sEdit, kEdit, nEdit, aDD, pEdit, qEdit, mode, fig)
     hasBinaryData = isappdata(fig, 'BinaryInputData');
     if hasBinaryData
         text = getappdata(fig, 'BinaryInputData');
-        % text is now uint8 vector
     else
         text = inArea.Value;
         if isempty(text)
             uialert(fig, 'Please enter text or upload a file.', 'Input Error');
             return; 
         end
-        if iscell(text)
-            text = strjoin(text, newline);
-        end
+        if iscell(text), text = strjoin(text, newline); end
     end
 
     method = methodDD.Value;
@@ -438,63 +462,44 @@ function processText(inArea, outArea, methodDD, sEdit, kEdit, nEdit, aDD, mode, 
             if isnumeric(text), text = char(text); end
             shiftStr = sEdit.Value;
             shift = str2double(shiftStr);
-            if isnan(shift)
-                error('Please enter a valid numeric shift value.');
-            end
+            if isnan(shift), error('Please enter a valid numeric shift value.'); end
             result = caeser(text, shift, mode);
+            
         elseif strcmp(method, 'One-Time Pad')
             if isnumeric(text), text = char(text); end
             key = kEdit.Value;
-            if isempty(key)
-                 error('Please enter a key for One-Time Pad.');
-            end
+            if isempty(key), error('Please enter a key for One-Time Pad.'); end
             result = oneTimePad(text, key, mode);
+            
         elseif strcmp(method, 'XOR - Bitwise stream cipher')
             key = kEdit.Value;
             nonceStr = nEdit.Value;
-            if isempty(key)
-                 error('Please enter a key for XOR bitwise stream cipher.');
-            end
-            if isempty(nonceStr)
-                 error('Please enter a nonce for XOR bitwise stream cipher.');
-            end
+            if isempty(key), error('Please enter a key for XOR.'); end
+            if isempty(nonceStr), error('Please enter a nonce for XOR.'); end
 
-            % Pre-processing for XOR Decrypt (Hex String -> Bytes)
-            % Only if manual text input (no binary file loaded)
             if strcmpi(mode, 'decrypt') && ~hasBinaryData
                  try
-                     % Remove spaces if any
                      clean_text = strrep(text, ' ', '');
-                     % Convert Hex string to uint8 array
                      text = uint8(hex2dec(reshape(clean_text, 2, [])')');
                  catch
                      error('Input for decryption must be a valid Hex string (or upload a binary file).');
                  end
             end
 
-            % XOR Cipher Output is uint8
             out_uint8 = xorCipher(text, key, nonceStr, mode);
 
-            % Handle display
-            % Heuristic: If all bytes are printable ASCII/newlines, show text. Else Hex.
-            % Printable ASCII: 32-126, plus TAB(9), LF(10), CR(13)
             is_printable = all((out_uint8 >= 32 & out_uint8 <= 126) | out_uint8 == 9 | out_uint8 == 10 | out_uint8 == 13);
-            
             if is_printable
                 result = char(out_uint8);
             else
-                % Show Hex
                 result = lower(reshape(dec2hex(out_uint8)', 1, []));
             end
             
         elseif strcmp(method, 'AES block cipher')
             if isnumeric(text), text = char(text); end
             key = kEdit.Value;
-            if isempty(key)
-                error('Please enter a 64-character Hex key for AES.');
-            end
-            if length(key) ~= 64
-                 error('AES-256 key must be exactly 64 hex characters.');
+            if isempty(key) || length(key) ~= 64
+                error('AES-256 key must be exactly 64 hex characters.');
             end
             
             if strcmpi(mode, 'decrypt')
@@ -503,28 +508,81 @@ function processText(inArea, outArea, methodDD, sEdit, kEdit, nEdit, aDD, mode, 
                     str_result = char(hex2dec(reshape(result, 2, [])')');
                     result = strtrim(str_result); 
                 catch
-                    error('Decryption successful but failed to convert Hex to String. Ensure ciphertext is valid Hex.');
+                    error('Decryption failed to convert Hex to String.');
                 end
             else
                 result = aesBlockCipher(text, key, mode);
             end
+            
         elseif strcmp(method, 'DES block cipher')
             if isnumeric(text), text = char(text); end
             key = getappdata(fig, 'DESKey');
-            if isempty(key)
-                error('No DES key found. Please click "Update Key Matrix" first.');
-            end
+            if isempty(key), error('No DES key found. Update Key Matrix first.'); end
             result = desBlockCipher(text, key, mode);
+            
         elseif strcmp(method, 'Keyed Hash')
             if isnumeric(text), text = char(text); end
             key = kEdit.Value;
-            if isempty(key)
-                error('Please enter a key for HMAC.');
+            if isempty(key), error('Please enter a key for HMAC.'); end
+            result = HMAC(key, text, aDD.Value);
+            
+        elseif strcmp(method, 'RSA')
+            % Get p and q
+            p = pEdit.Value;
+            q = qEdit.Value;
+            
+            if isempty(p) || isempty(q)
+                error('Both p and q (prime numbers) are required for RSA.');
+            end
+            if ~isprime(p) || ~isprime(q)
+                error('p and q must be prime numbers.');
             end
             
-            algo = aDD.Value;
-            result = HMAC(key, text, algo);
+            % RSA expects numeric array (of chars) for encrypt, 
+            % and numeric array (of cipher ints) for decrypt.
+            
+            % Ensure week8 is in path for rsaWrapper
+            addpath(genpath('week8'));
+            
+            if strcmpi(mode, 'encrypt')
+                if isnumeric(text), text = char(text); end
+                % rsaWrapper encrypts char -> cipher int array
+                cipher_ints = rsaWrapper(text, p, q, 'encrypt');
+                
+                % Convert cipher integers to string for display (space separated?)
+                % Or Hex? rsaWrapper returns double array of encrypted values.
+                % Values can be large (up to p*q).
+                % Space separated decimals is safest for display/copy-paste.
+                result = num2str(cipher_ints);
+            else
+                % Decrypt
+                % Input is likely space separated string of integers if manual
+                % Or numeric array if passed from somewhere?
+                % If it's text string from input area:
+                if ischar(text) || isstring(text)
+                    try
+                        cipher_ints = str2num(text);
+                        if isempty(cipher_ints)
+                            error('Input format error. RSA Decryption expects space-separated integers.');
+                        end
+                    catch
+                         error('Invalid input format for RSA decryption.');
+                    end
+                else
+                    % If binary data, it's uint8? RSA cipher texts are usually > 255.
+                    % So binary file upload for RSA cipher text might need 
+                    % special handling (e.g. reading int16/32/64).
+                    % Current uploadFile reads *uint8.
+                    % If user uploads a text file containing numbers, raw_bytes will be ASCII chars.
+                    % We need to parse them.
+                    cipher_ints = str2num(char(text));
+                end
+                
+                decrypted_str = rsaWrapper(cipher_ints, p, q, 'decrypt');
+                result = decrypted_str;
+            end
         end
+        
         outArea.Value = result;
     catch ME
         uialert(fig, ME.message, 'Processing Error');
