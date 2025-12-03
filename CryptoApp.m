@@ -1,8 +1,8 @@
 function CryptoApp
-    % Create UI Figure
+    % --- Create UI Figure ---
     fig = uifigure('Name', 'Crypto App', 'Position', [100 100 700 600]); 
         
-    % handles struct contains all UI components
+    % --- handles struct contains all UI components ---
     handles = layoutManager(fig);
     
     % --- Set Callbacks ---
@@ -20,7 +20,7 @@ function CryptoApp
     
     handles.inputTextArea.ValueChangedFcn = @(area, event) textChanged(handles, fig);
 
-    % Initialize visibility
+    % --- Initialize visibility ---
     handleVisibility(handles);
 end
 
@@ -42,32 +42,27 @@ function generateKey(handles, fig)
             return;
         end
         handles.keyEdit.Value = char(randi([65, 90], 1, length(plaintext)));
-        
-    elseif strcmp(method, 'AES block cipher')
-        hexChars = '0123456789abcdef';
-        handles.keyEdit.Value = hexChars(randi(16, 1, 64));
-        
-    elseif strcmp(method, 'DES block cipher')
-        try
-            addpath(genpath('week6'));
-            key = keygen; 
-            setappdata(fig, 'DESKey', key);
-            handles.keyEdit.Value = mat2str(key);
-            uialert(fig, "DES Key Matrix Updated", 'Key Update');
-        catch ME
-            uialert(fig, ['Error generating DES key: ' ME.message], 'Key Gen Error');
-        end
     elseif strcmp(method, 'XOR - Bitwise stream cipher') || strcmp(method, 'Keyed Hash')
         chars = ['A':'Z' 'a':'z' '0':'9'];
         len = 16; 
         if strcmp(method, 'Keyed Hash'), len = 32; end
         handles.keyEdit.Value = chars(randi(length(chars), 1, len));
+    elseif strcmp(method, 'AES block cipher')
+        hexChars = '0123456789abcdef';
+        handles.keyEdit.Value = hexChars(randi(16, 1, 64)); 
+    elseif strcmp(method, 'DES block cipher')
+        try
+            key = keygen; 
+            setappdata(fig, 'DESKey', key);
+            handles.keyEdit.Value = mat2str(key);
+        catch ME
+            uialert(fig, ['Error generating DES key: ' ME.message], 'Key Gen Error');
+        end
     end
 end
 
 function generateKeyDH(handles, fig)
     try
-        addpath(genpath('week8'));
         prompt = {'Enter a prime value for g:', 'Enter a prime value for p:'};
         answer = inputdlg(prompt, 'Diffie-Hellman Inputs', [1 35], {'', ''});
         if isempty(answer), return; end

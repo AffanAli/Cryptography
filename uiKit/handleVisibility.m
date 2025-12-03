@@ -15,11 +15,26 @@ function handleVisibility(handles)
     handles.envIVLabel.Visible = 'off'; handles.envIVEdit.Visible = 'off'; handles.envGenIVBtn.Visible = 'off';
     handles.envAADLabel.Visible = 'off'; handles.envAADEdit.Visible = 'off';
     
+    % Reset all parameter and output fields when method changes
+    handles.keyEdit.Value = '';
+    handles.nonceEdit.Value = '';
+    handles.envIVEdit.Value = '';
+    handles.envAADEdit.Value = '';
+    
+    % For numeric fields, use 0 (within default Limits) as a cleared sentinel
+    handles.rsaPEdit.Value = 0;
+    handles.rsaQEdit.Value = 0;
+    
+    handles.outputTextArea.Value = '';
+    
     handles.encryptBtn.Text = 'Encrypt';
     handles.decryptBtn.Visible = 'on'; 
 
     handles.gl.RowHeight{3} = 30; 
     handles.gl.RowHeight{4} = 0; 
+
+    % Reset key button grid column widths (overridden for specific methods)
+    handles.keyBtnGrid.ColumnWidth = {60, 60};
 
     handles.keyEdit.Editable = 'on'; 
 
@@ -33,6 +48,9 @@ function handleVisibility(handles)
             handles.keyBtnGrid.Visible = 'on';
             handles.genKeyBtn.Visible = 'on';
             handles.genKeyBtn.Text = 'Generate';
+            
+            % Make the Generate Key button take the full available width
+            handles.keyBtnGrid.ColumnWidth = {'1x', 0};
         case 'XOR - Bitwise stream cipher'
             handles.keyLabel.Visible = 'on';
             handles.keyEdit.Visible = 'on';
@@ -44,12 +62,18 @@ function handleVisibility(handles)
             handles.nonceEdit.Visible = 'on';
             handles.genNonceBtn.Visible = 'on';
             handles.gl.RowHeight{4} = 30; 
+
+            % Make the Generate Key button take the full available width
+            handles.keyBtnGrid.ColumnWidth = {'1x', 0};
         case 'AES block cipher'
             handles.keyLabel.Visible = 'on';
             handles.keyEdit.Visible = 'on';
             handles.keyBtnGrid.Visible = 'on';
             handles.genKeyBtn.Visible = 'on';
             handles.genKeyBtn.Text = 'Gen AES-256';
+            
+            % Make the Generate Key button take the full available width
+            handles.keyBtnGrid.ColumnWidth = {'1x', 0};
         case 'DES block cipher'
             handles.keyLabel.Visible = 'on'; 
             handles.keyEdit.Visible = 'on'; 
@@ -57,7 +81,9 @@ function handleVisibility(handles)
             handles.keyBtnGrid.Visible = 'on';
             handles.genKeyBtn.Visible = 'on';
             handles.genKeyBtn.Text = 'Update Key Matrix';
-            handles.gl.RowHeight{3} = 150; 
+
+            % Make the Generate Key button take the full available width
+            handles.keyBtnGrid.ColumnWidth = {'1x', 0};
         case 'Keyed Hash'
             handles.keyLabel.Visible = 'on';
             handles.keyEdit.Visible = 'on';

@@ -142,7 +142,7 @@ function handles = layoutManager(fig)
     handles.algoDropdown = uidropdown(gl);
     handles.algoDropdown.Items = {'SHA-1', 'SHA-384', 'SHA-512'};
     handles.algoDropdown.Layout.Row = 4;
-    handles.algoDropdown.Layout.Column = [2 3];
+    handles.algoDropdown.Layout.Column = [2 4];
     handles.algoDropdown.Visible = 'off';
 
     % Nonce (XOR)

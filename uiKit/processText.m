@@ -72,7 +72,10 @@ function processText(handles, mode, fig)
             
         elseif strcmp(method, 'RSA')
             p = handles.rsaPEdit.Value; q = handles.rsaQEdit.Value;
-            if isempty(p) || isempty(q), error('P and Q required.'); end
+            % Treat non-positive values (e.g. cleared 0) as "not provided"
+            if isempty(p) || isempty(q) || p <= 0 || q <= 0
+                error('P and Q required.');
+            end
             addpath(genpath('week8'));
             if strcmpi(mode, 'encrypt')
                 if isnumeric(text), text = char(text); end
