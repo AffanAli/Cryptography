@@ -29,6 +29,7 @@ function textChanged(handles, fig)
     handles.fileNameLabel.Text = 'No file selected';
     if isappdata(fig, 'BinaryInputData'), rmappdata(fig, 'BinaryInputData'); end
     if isappdata(fig, 'InputFilePath'), rmappdata(fig, 'InputFilePath'); end
+    if isappdata(fig, 'IsBinaryInputFile'), rmappdata(fig, 'IsBinaryInputFile'); end
 end
 
 function generateKey(handles, fig)

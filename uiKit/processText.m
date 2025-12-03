@@ -13,6 +13,12 @@ function processText(handles, mode, fig)
     end
 
     method = handles.methodDropdown.Value;
+    
+    % Distinguish truly-binary files from plain text files loaded via Upload
+    isBinaryFile = false;
+    if isappdata(fig, 'IsBinaryInputFile')
+        isBinaryFile = getappdata(fig, 'IsBinaryInputFile');
+    end
         
     try
         result = '';
@@ -31,21 +37,44 @@ function processText(handles, mode, fig)
         elseif strcmp(method, 'XOR - Bitwise stream cipher')
             key = handles.keyEdit.Value;
             nonceStr = handles.nonceEdit.Value;
-            if isempty(key) || isempty(nonceStr), error('Key and Nonce required.'); end
-            if strcmpi(mode, 'decrypt') && ~hasBinaryData
-                 try
-                     clean_text = strrep(text, ' ', '');
-                     text = uint8(hex2dec(reshape(clean_text, 2, [])')');
-                 catch
-                     error('Input for decryption must be Hex string.');
-                 end
+            if isempty(key) || isempty(nonceStr)
+                error('Key and Nonce required.');
             end
-            out_uint8 = xorCipher(text, key, nonceStr, mode);
             
-            % Display Logic
-            is_printable = all((out_uint8 >= 32 & out_uint8 <= 126) | out_uint8 == 9 | out_uint8 == 10 | out_uint8 == 13);
-            if is_printable, result = char(out_uint8);
-            else, result = lower(reshape(dec2hex(out_uint8)', 1, [])); end
+            % Binary/image flow only for truly-binary files
+            if hasBinaryData && isBinaryFile
+                % Delegate binary/image handling to a dedicated helper
+                result = handleXorBinary(fig, mode, key, nonceStr);
+            else
+                % --- Text / hex flow (existing behavior) ---
+                inputBytes = [];
+                if strcmpi(mode, 'decrypt')
+                    % Expect hex string and convert back to bytes
+                    try
+                        clean_text = strrep(text, ' ', '');
+                        inputBytes = uint8(hex2dec(reshape(clean_text, 2, [])')');
+                    catch
+                        error('Input for decryption must be Hex string.');
+                    end
+                else
+                    % Encrypt plain text directly
+                    if ischar(text) || isstring(text)
+                        inputBytes = uint8(char(text));
+                    else
+                        inputBytes = uint8(text);
+                    end
+                end
+
+                out_uint8 = xorCipher(inputBytes, key, nonceStr, mode);
+
+                % Display Logic
+                is_printable = all((out_uint8 >= 32 & out_uint8 <= 126) | out_uint8 == 9 | out_uint8 == 10 | out_uint8 == 13);
+                if is_printable
+                    result = char(out_uint8);
+                else
+                    result = lower(reshape(dec2hex(out_uint8)', 1, []));
+                end
+            end
             
         elseif strcmp(method, 'AES block cipher')
             if isnumeric(text), text = char(text); end
@@ -127,5 +156,40 @@ function processText(handles, mode, fig)
         handles.outputTextArea.Value = result;
     catch ME
         uialert(fig, ME.message, 'Processing Error');
+    end
+end
+
+function result = handleXorBinary(fig, mode, key, nonceStr)
+    dataBytes = getappdata(fig, 'BinaryInputData');
+
+    out_uint8 = xorCipher(dataBytes, key, nonceStr, mode);
+
+    % Suggest a default filename based on the input file (if any)
+    defaultName = 'xor_output.bin';
+    dialogTitle = 'Save XOR Output File';
+
+    if isappdata(fig, 'InputFilePath')
+        inputPath = getappdata(fig, 'InputFilePath');
+        [~, baseName, ext] = fileparts(inputPath);
+
+        if strcmpi(mode, 'encrypt')
+            defaultName = sprintf('%s%s.xor', baseName, ext);
+            dialogTitle = 'Save XOR Encrypted File';
+        else
+            defaultName = sprintf('%s_dec%s', baseName, ext);
+            dialogTitle = 'Save XOR Decrypted File';
+        end
+    end
+
+    [file, path] = uiputfile('*.*', dialogTitle, defaultName);
+
+    if ~isequal(file, 0)
+        fid = fopen(fullfile(path, file), 'wb');
+        fwrite(fid, out_uint8, 'uint8');
+        fclose(fid);
+
+        result = sprintf('XOR %sion successful.\nSaved to: %s', mode, file);
+    else
+        result = sprintf('XOR %sion successful (file not saved).', mode);
     end
 end

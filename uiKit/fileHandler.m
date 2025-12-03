@@ -13,6 +13,7 @@ function fileHandler(handles, fig)
         
         % Heuristic: Text vs Binary
         is_binary = any(raw_bytes == 0) || (sum(raw_bytes < 9 | (raw_bytes > 13 & raw_bytes < 32)) / length(raw_bytes) > 0.1);
+        setappdata(fig, 'IsBinaryInputFile', is_binary);
         
         if is_binary
             hex_str = upper(reshape(dec2hex(raw_bytes)', 1, []));
