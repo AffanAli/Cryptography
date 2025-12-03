@@ -83,7 +83,6 @@ function processText(handles, mode, fig)
             end
             
         elseif strcmp(method, 'Envelope Encryption (KMS)')
-            addpath(genpath('week10'));
             if strcmpi(mode, 'encrypt')
                 iv = handles.envIVEdit.Value;
                 aad = handles.envAADEdit.Value;

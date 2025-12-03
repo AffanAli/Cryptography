@@ -12,8 +12,8 @@ function CryptoApp
     
     handles.genKeyBtn.ButtonPushedFcn = @(btn,event) generateKey(handles, fig);
     handles.genDHBtn.ButtonPushedFcn = @(btn,event) generateKeyDH(handles, fig);
-    handles.genNonceBtn.ButtonPushedFcn = @(btn,event) generateNonce(handles, fig);
-    handles.envGenIVBtn.ButtonPushedFcn = @(btn,event) generateEnvIV(handles, fig);
+    handles.genNonceBtn.ButtonPushedFcn = @(btn,event) generateNonce(handles);
+    handles.envGenIVBtn.ButtonPushedFcn = @(btn,event) generateEnvIV(handles);
     
     handles.encryptBtn.ButtonPushedFcn = @(btn,event) processText(handles, 'encrypt', fig);
     handles.decryptBtn.ButtonPushedFcn = @(btn,event) processText(handles, 'decrypt', fig);
